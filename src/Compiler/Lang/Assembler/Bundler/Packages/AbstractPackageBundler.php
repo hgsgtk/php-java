@@ -30,11 +30,29 @@ abstract class AbstractPackageBundler implements PackageBundlerInterface
     {
         $constants = [];
         $reflectionClass = new \ReflectionClass($this);
-        foreach ($reflectionClass->getConstants() as $name => $constant) {
+        foreach ($reflectionClass->getConstants() as $name => $value) {
             $constantInfo = new \ReflectionClassConstant($this, $name);
-            if ($phpDocument = $constantInfo->getDocComment()) {
-                $documentBlock = \phpDocumentor\Reflection\DocBlockFactory::createInstance()
-                    ->create($phpDocument);
+            try {
+                if ($phpDocument = $constantInfo->getDocComment()) {
+                    $documentBlock = \phpDocumentor\Reflection\DocBlockFactory::createInstance()
+                        ->create($phpDocument);
+
+                    // Need @export flag.
+                    if (!$documentBlock->hasTag('export') || !$documentBlock->hasTag('var')) {
+                        continue;
+                    }
+
+                    /**
+                     * @var \phpDocumentor\Reflection\DocBlock\Tags\Var_ $varType
+                     */
+                    $varType = current($documentBlock->getTagsByName('var'));
+                    $constants[] = [
+                        $name,
+                        $value,
+                        (string) $varType->getType(),
+                    ];
+                }
+            } catch (\InvalidArgumentException $e) {
             }
         }
 

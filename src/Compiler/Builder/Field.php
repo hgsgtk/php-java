@@ -8,6 +8,7 @@ class Field implements BuilderInterface, EntryInterface
 {
     private $attributes = [];
     private $accessFlags = 0;
+    protected $value;
 
     /**
      * @var FinderResultInterface
@@ -63,5 +64,16 @@ class Field implements BuilderInterface, EntryInterface
     {
         $this->attributes = $attributes;
         return $this;
+    }
+
+    public function setValue(string $value): self
+    {
+        $this->value = $value;
+        return $this;
+    }
+
+    public function getValue(): string
+    {
+        return $this->value;
     }
 }

@@ -8,9 +8,11 @@ use PHPJava\Compiler\Builder\Collection\Attributes;
 use PHPJava\Compiler\Builder\Collection\ConstantPool;
 use PHPJava\Compiler\Builder\Collection\Fields;
 use PHPJava\Compiler\Builder\Collection\Methods;
+use PHPJava\Compiler\Builder\Field;
 use PHPJava\Compiler\Builder\Finder\ConstantPoolFinder;
 use PHPJava\Compiler\Builder\Method;
 use PHPJava\Compiler\Builder\Signatures\Descriptor;
+use PHPJava\Compiler\Builder\Signatures\FieldAccessFlag;
 use PHPJava\Compiler\Builder\Structures\ClassFileStructure;
 use PHPJava\Compiler\Builder\Structures\Info\Utf8Info;
 use PHPJava\Compiler\Compiler;
@@ -47,63 +49,83 @@ class PHPStandardClass extends AbstractBundler
             $packageInstance = $package::factory($this);
 
             foreach ($packageInstance->getDefinedConstants() as [$name, $value, $returnSignature]) {
-                var_dump($name, $value, $returnSignature);
-                exit();
-            }
-
-            foreach ($packageInstance->getDefinedMethods() as [$methodName, $argumentSignature, $returnSignature]) {
-                $defaultMethodName = $methodName;
-                $methodName = Runtime::PHP_STANDARD_CLASS_METHOD_PREFIX . $methodName;
-
-                $descriptor = new Descriptor();
-                foreach ($argumentSignature as $argument) {
-                    $descriptor
-                        ->addArgument($argument);
-                }
-                $descriptor = $descriptor
-                    ->setReturn($returnSignature)
-                    ->make();
-
                 $this->getEnhancedConstantPool()
-                    ->addMethodref(
+                    ->addFieldref(
                         $className,
-                        $methodName,
-                        $descriptor
+                        $name,
+                        $descriptor = (new Descriptor())
+                            ->addArgument($returnSignature)
+                            ->make()
                     );
-
-                // Call functions
-                $functionOperationCodes = call_user_func([$packageInstance, $defaultMethodName]);
-
-                $this->methods
+                $this->fields
                     ->add(
-                        (new Method(
-                            (new \PHPJava\Compiler\Builder\Signatures\MethodAccessFlag())
+                        (new Field(
+                            (new FieldAccessFlag())
                                 ->enablePublic()
-                                ->enableStatic()
+                                ->enableFinal()
                                 ->make(),
-                            $this->getConstantPoolFinder()
-                                ->find(
-                                    Utf8Info::class,
-                                    $methodName
-                                ),
-                            $this->getConstantPoolFinder()->find(
-                                Utf8Info::class,
-                                $descriptor
-                            )
+                            $this->getEnhancedConstantPool()
+                                ->findUtf8($name),
+                            $this->getEnhancedConstantPool()
+                                ->findUtf8($descriptor)
                         ))
-                            ->setAttributes(
-                                (new Attributes())
-                                    ->add(
-                                        (new Code())
-                                            ->setConstantPool($this->getConstantPool())
-                                            ->setConstantPoolFinder($this->getConstantPoolFinder())
-                                            ->setCode($functionOperationCodes)
-                                            ->beginPrepare()
-                                    )
-                                    ->toArray()
-                            )
+                            ->setValue($value)
                     );
             }
+
+//            foreach ($packageInstance->getDefinedMethods() as [$methodName, $argumentSignature, $returnSignature]) {
+//                $defaultMethodName = $methodName;
+//                $methodName = Runtime::PHP_STANDARD_CLASS_METHOD_PREFIX . $methodName;
+//
+//                $descriptor = new Descriptor();
+//                foreach ($argumentSignature as $argument) {
+//                    $descriptor
+//                        ->addArgument($argument);
+//                }
+//                $descriptor = $descriptor
+//                    ->setReturn($returnSignature)
+//                    ->make();
+//
+//                $this->getEnhancedConstantPool()
+//                    ->addMethodref(
+//                        $className,
+//                        $methodName,
+//                        $descriptor
+//                    );
+//
+//                // Call functions
+//                $functionOperationCodes = call_user_func([$packageInstance, $defaultMethodName]);
+//
+//                $this->methods
+//                    ->add(
+//                        (new Method(
+//                            (new \PHPJava\Compiler\Builder\Signatures\MethodAccessFlag())
+//                                ->enablePublic()
+//                                ->enableStatic()
+//                                ->make(),
+//                            $this->getConstantPoolFinder()
+//                                ->find(
+//                                    Utf8Info::class,
+//                                    $methodName
+//                                ),
+//                            $this->getConstantPoolFinder()->find(
+//                                Utf8Info::class,
+//                                $descriptor
+//                            )
+//                        ))
+//                            ->setAttributes(
+//                                (new Attributes())
+//                                    ->add(
+//                                        (new Code())
+//                                            ->setConstantPool($this->getConstantPool())
+//                                            ->setConstantPoolFinder($this->getConstantPoolFinder())
+//                                            ->setCode($functionOperationCodes)
+//                                            ->beginPrepare()
+//                                    )
+//                                    ->toArray()
+//                            )
+//                    );
+//            }
         }
 
         $this->getEnhancedConstantPool()

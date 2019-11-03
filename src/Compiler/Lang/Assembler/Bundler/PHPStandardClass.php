@@ -6,6 +6,7 @@ use PHPJava\Compiler\Builder\Attributes\PHPJavaSignature;
 use PHPJava\Compiler\Builder\Attributes\SourceFile;
 use PHPJava\Compiler\Builder\Collection\Attributes;
 use PHPJava\Compiler\Builder\Collection\ConstantPool;
+use PHPJava\Compiler\Builder\Collection\Fields;
 use PHPJava\Compiler\Builder\Collection\Methods;
 use PHPJava\Compiler\Builder\Finder\ConstantPoolFinder;
 use PHPJava\Compiler\Builder\Method;
@@ -37,12 +38,19 @@ class PHPStandardClass extends AbstractBundler
         $this->constantPoolFinder = new ConstantPoolFinder($this->constantPool);
 
         $this->methods = new Methods();
+        $this->fields = new Fields();
 
         foreach (static::BUNDLE_PACKAGES as $package) {
             /**
              * @var PackageBundlerInterface $package
              */
             $packageInstance = $package::factory($this);
+
+            foreach ($packageInstance->getDefinedConstants() as [$name, $value, $returnSignature]) {
+                var_dump($name, $value, $returnSignature);
+                exit();
+            }
+
             foreach ($packageInstance->getDefinedMethods() as [$methodName, $argumentSignature, $returnSignature]) {
                 $defaultMethodName = $methodName;
                 $methodName = Runtime::PHP_STANDARD_CLASS_METHOD_PREFIX . $methodName;
@@ -123,6 +131,11 @@ class PHPStandardClass extends AbstractBundler
                 ->setMethods(
                     $this
                         ->methods
+                        ->toArray()
+                )
+                ->setFields(
+                    $this
+                        ->fields
                         ->toArray()
                 )
                 ->setAttributes(

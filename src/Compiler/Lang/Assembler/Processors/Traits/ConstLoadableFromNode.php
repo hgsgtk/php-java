@@ -54,7 +54,7 @@ trait ConstLoadableFromNode
             '',
             \PHPJava\Compiler\Lang\Assembler\Bundler\Packages\Map\Constants::BASED
         );
-        $constantMappedMethodName = \PHPJava\Compiler\Lang\Assembler\Bundler\Packages\Map\Constants::MAP[$constName] ?? null;
+        $constantMappedMethodName = \PHPJava\Compiler\Lang\Assembler\Bundler\Packages\Map\Constants::METHOD_MAP[$constName] ?? null;
 
         if ($constantMappedMethodName === null) {
             throw new AssembleStructureException(

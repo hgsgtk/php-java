@@ -26,41 +26,55 @@ abstract class AbstractPackageBundler implements PackageBundlerInterface
         $this->bundler = $bundler;
     }
 
+    public function getDefinedConstants(): array
+    {
+        $constants = [];
+        $reflectionClass = new \ReflectionClass($this);
+        foreach ($reflectionClass->getConstants() as $name => $constant) {
+            $constantInfo = new \ReflectionClassConstant($this, $name);
+            if ($phpDocument = $constantInfo->getDocComment()) {
+                $documentBlock = \phpDocumentor\Reflection\DocBlockFactory::createInstance()
+                    ->create($phpDocument);
+            }
+        }
+
+        return $constants;
+    }
+
     public function getDefinedMethods(): array
     {
         $methods = [];
         $reflectionClass = new \ReflectionClass($this);
-        $abstractReflectionClass = new \ReflectionClass(__CLASS__);
         foreach ($reflectionClass->getMethods() as $method) {
-            $arguments = [];
-            $return = _Void::class;
-
-            $className = str_replace(Runtime::BUILD_PACKAGE_NAMESPACE, '', get_class($this));
-            $mappedClassName = Runtime::BUILD_PACKAGE_NAMESPACE . 'Map\\' . $className;
-
-            $methodName = null;
-            $arguments = null;
-            $return = null;
-            foreach ($mappedClassName::MAP as $mappedMethod) {
-                [$targetedMethodName, $targetedArguments, $targetedReturn] = $mappedMethod;
-                if ($method->getName() !== $targetedMethodName) {
-                    continue;
-                }
-
-                $methodName = $targetedMethodName;
-                $arguments = $targetedArguments;
-                $return = $targetedReturn;
-            }
-
-            if ($methodName === null) {
-                continue;
-            }
-
-            $methods[] = [
-                $method->getName(),
-                $arguments,
-                $return,
-            ];
+//            $arguments = [];
+//            $return = _Void::class;
+//
+//            $className = str_replace(Runtime::BUILD_PACKAGE_NAMESPACE, '', get_class($this));
+//            $mappedClassName = Runtime::BUILD_PACKAGE_NAMESPACE . 'Map\\' . $className;
+//
+//            $methodName = null;
+//            $arguments = null;
+//            $return = null;
+//            foreach ($mappedClassName::METHOD_MAP as $mappedMethod) {
+//                [$targetedMethodName, $targetedArguments, $targetedReturn] = $mappedMethod;
+//                if ($method->getName() !== $targetedMethodName) {
+//                    continue;
+//                }
+//
+//                $methodName = $targetedMethodName;
+//                $arguments = $targetedArguments;
+//                $return = $targetedReturn;
+//            }
+//
+//            if ($methodName === null) {
+//                continue;
+//            }
+//
+//            $methods[] = [
+//                $method->getName(),
+//                $arguments,
+//                $return,
+//            ];
         }
         return $methods;
     }

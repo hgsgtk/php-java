@@ -8,5 +8,7 @@ interface PackageBundlerInterface
 
     public function getDefinedMethods(): array;
 
+    public function getDefinedConstants(): array;
+
     public function getBundler(): AbstractBundler;
 }

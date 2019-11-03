@@ -10,15 +10,19 @@ use PHPJava\Compiler\Builder\Collection\Fields;
 use PHPJava\Compiler\Builder\Collection\Methods;
 use PHPJava\Compiler\Builder\Field;
 use PHPJava\Compiler\Builder\Finder\ConstantPoolFinder;
+use PHPJava\Compiler\Builder\Generator\Operation\Operation;
 use PHPJava\Compiler\Builder\Method;
 use PHPJava\Compiler\Builder\Signatures\Descriptor;
 use PHPJava\Compiler\Builder\Signatures\FieldAccessFlag;
+use PHPJava\Compiler\Builder\Signatures\MethodAccessFlag;
 use PHPJava\Compiler\Builder\Structures\ClassFileStructure;
 use PHPJava\Compiler\Builder\Structures\Info\Utf8Info;
 use PHPJava\Compiler\Compiler;
 use PHPJava\Compiler\Lang\Assembler\Traits\Enhancer\ConstantPoolEnhanceable;
 use PHPJava\Core\JVM\Parameters\Runtime;
+use PHPJava\Kernel\Maps\OpCode;
 use PHPJava\Kernel\Resolvers\SDKVersionResolver;
+use PHPJava\Kernel\Types\_Void;
 use PHPJava\Packages\java\lang\_Object;
 
 class PHPStandardClass extends AbstractBundler
@@ -131,6 +135,42 @@ class PHPStandardClass extends AbstractBundler
         $this->getEnhancedConstantPool()
             ->addClass($className)
             ->addClass(_Object::class);
+
+        if ($this->fields->length() > 0) {
+            $this->getEnhancedConstantPool()
+                ->addUtf8('<clinit>')
+                ->addUtf8(
+                    $descriptor = (new Descriptor())
+                        ->setReturn(_Void::class)
+                        ->make()
+                );
+
+            $this->methods
+                ->add(
+                    (new Method(
+                        (new MethodAccessFlag())
+                            ->enableStatic()
+                            ->make(),
+                        $this->getEnhancedConstantPool()
+                            ->findUtf8('<clinit>'),
+                        $this->getEnhancedConstantPool()
+                            ->findUtf8($descriptor)
+                    ))
+                        ->setAttributes(
+                            (new Attributes())
+                                ->add(
+                                        (new Code())
+                                            ->setConstantPool($this->getConstantPool())
+                                            ->setConstantPoolFinder($this->getConstantPoolFinder())
+                                            ->setCode([
+                                                Operation::create(OpCode::_return),
+                                            ])
+                                            ->beginPrepare()
+                                    )
+                                ->toArray()
+                        )
+                );
+        }
 
         $compiler = new Compiler(
             (new ClassFileStructure())

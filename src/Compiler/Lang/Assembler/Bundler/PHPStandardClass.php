@@ -10,6 +10,7 @@ use PHPJava\Compiler\Builder\Collection\Fields;
 use PHPJava\Compiler\Builder\Collection\Methods;
 use PHPJava\Compiler\Builder\Field;
 use PHPJava\Compiler\Builder\Finder\ConstantPoolFinder;
+use PHPJava\Compiler\Builder\Generator\Operation\Operation;
 use PHPJava\Compiler\Builder\Method;
 use PHPJava\Compiler\Builder\Signatures\Descriptor;
 use PHPJava\Compiler\Builder\Signatures\FieldAccessFlag;
@@ -21,6 +22,7 @@ use PHPJava\Compiler\Lang\Assembler\Traits\Enhancer\ConstantPoolEnhanceable;
 use PHPJava\Compiler\Lang\Assembler\Traits\Enhancer\Operation\FieldAssignable;
 use PHPJava\Compiler\Lang\Assembler\Traits\Enhancer\Operation\NumberLoadable;
 use PHPJava\Core\JVM\Parameters\Runtime;
+use PHPJava\Kernel\Maps\OpCode;
 use PHPJava\Kernel\Resolvers\SDKVersionResolver;
 use PHPJava\Kernel\Types\_Void;
 use PHPJava\Packages\java\lang\_Object;
@@ -159,6 +161,8 @@ class PHPStandardClass extends AbstractBundler
                         ->setReturn(_Void::class)
                         ->make()
                 );
+
+            $staticInitializerOperations[] = Operation::create(OpCode::_return);
 
             // Define <clinit> for initialize static fields.
             $this->methods

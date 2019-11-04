@@ -10,7 +10,6 @@ use PHPJava\Compiler\Builder\Collection\Fields;
 use PHPJava\Compiler\Builder\Collection\Methods;
 use PHPJava\Compiler\Builder\Field;
 use PHPJava\Compiler\Builder\Finder\ConstantPoolFinder;
-use PHPJava\Compiler\Builder\Generator\Operation\Operation;
 use PHPJava\Compiler\Builder\Method;
 use PHPJava\Compiler\Builder\Signatures\Descriptor;
 use PHPJava\Compiler\Builder\Signatures\FieldAccessFlag;
@@ -19,15 +18,19 @@ use PHPJava\Compiler\Builder\Structures\ClassFileStructure;
 use PHPJava\Compiler\Builder\Structures\Info\Utf8Info;
 use PHPJava\Compiler\Compiler;
 use PHPJava\Compiler\Lang\Assembler\Traits\Enhancer\ConstantPoolEnhanceable;
+use PHPJava\Compiler\Lang\Assembler\Traits\Enhancer\Operation\FieldAssignable;
+use PHPJava\Compiler\Lang\Assembler\Traits\Enhancer\Operation\NumberLoadable;
 use PHPJava\Core\JVM\Parameters\Runtime;
-use PHPJava\Kernel\Maps\OpCode;
 use PHPJava\Kernel\Resolvers\SDKVersionResolver;
 use PHPJava\Kernel\Types\_Void;
 use PHPJava\Packages\java\lang\_Object;
+use PHPJava\Utilities\ArrayTool;
 
 class PHPStandardClass extends AbstractBundler
 {
     use ConstantPoolEnhanceable;
+    use NumberLoadable;
+    use FieldAssignable;
 
     const BUNDLE_PACKAGES = [
         \PHPJava\Compiler\Lang\Assembler\Bundler\Packages\Constants::class,
@@ -45,6 +48,8 @@ class PHPStandardClass extends AbstractBundler
 
         $this->methods = new Methods();
         $this->fields = new Fields();
+
+        $staticInitializerOperations = [];
 
         foreach (static::BUNDLE_PACKAGES as $package) {
             /**
@@ -75,6 +80,16 @@ class PHPStandardClass extends AbstractBundler
                         ))
                             ->setValue($value)
                     );
+
+                ArrayTool::concat(
+                    $staticInitializerOperations,
+                    ...$this->assembleAssignStaticField(
+                        $className,
+                        $name,
+                        $value,
+                        $returnSignature
+                    )
+                );
             }
 
 //            foreach ($packageInstance->getDefinedMethods() as [$methodName, $argumentSignature, $returnSignature]) {
@@ -145,6 +160,7 @@ class PHPStandardClass extends AbstractBundler
                         ->make()
                 );
 
+            // Define <clinit> for initialize static fields.
             $this->methods
                 ->add(
                     (new Method(
@@ -159,13 +175,11 @@ class PHPStandardClass extends AbstractBundler
                         ->setAttributes(
                             (new Attributes())
                                 ->add(
-                                        (new Code())
-                                            ->setConstantPool($this->getConstantPool())
-                                            ->setConstantPoolFinder($this->getConstantPoolFinder())
-                                            ->setCode([
-                                                Operation::create(OpCode::_return),
-                                            ])
-                                            ->beginPrepare()
+                                    (new Code())
+                                        ->setConstantPool($this->getConstantPool())
+                                        ->setConstantPoolFinder($this->getConstantPoolFinder())
+                                        ->setCode($staticInitializerOperations)
+                                        ->beginPrepare()
                                     )
                                 ->toArray()
                         )

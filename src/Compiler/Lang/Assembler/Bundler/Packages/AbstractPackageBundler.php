@@ -49,7 +49,7 @@ abstract class AbstractPackageBundler implements PackageBundlerInterface
                     $constants[] = [
                         $name,
                         $value,
-                        (string) $varType->getType(),
+                        ltrim((string) $varType->getType(), '\\'),
                     ];
                 }
             } catch (\InvalidArgumentException $e) {
